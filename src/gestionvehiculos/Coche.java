@@ -21,12 +21,12 @@ public class Coche
     private int cilintrada;
     private int año;
     private String numBastidor;
-    private int precioVenta;
+    private int precioMercado;
 
     public Coche() {
     }
 
-    public Coche(int cocheId, String matricula, String marca, String modelo, String extras, int cilintrada, int año, String numBastidor, int precioVenta) {
+    public Coche(int cocheId, String matricula, String marca, String modelo, String extras, int cilintrada, int año, String numBastidor, int percioMercado) {
         this.cocheId = cocheId;
         this.matricula = matricula;
         this.marca = marca;
@@ -35,7 +35,7 @@ public class Coche
         this.cilintrada = cilintrada;
         this.año = año;
         this.numBastidor = numBastidor;
-        this.precioVenta = precioVenta;
+        this.precioMercado = percioMercado;
     }
 
     public int getCocheId() {
@@ -102,17 +102,17 @@ public class Coche
         this.numBastidor = numBastidor;
     }
 
-    public int getPrecioVenta() {
-        return precioVenta;
+    public int getPrecioMercado() {
+        return precioMercado;
     }
 
-    public void setPrecioVenta(int precioVenta) {
-        this.precioVenta = precioVenta;
+    public void setPrecioMercado(int precioMercado) {
+        this.precioMercado = precioMercado;
     }
 
     @Override
     public String toString() {
-        return "Coche{" + "cocheId=" + cocheId + ", matricula=" + matricula + ", marca=" + marca + ", modelo=" + modelo + ", extras=" + extras + ", cilintrada=" + cilintrada + ", a\u00f1o=" + año + ", numBastidor=" + numBastidor + ", precioVenta=" + precioVenta + '}';
+        return "Coche{" + "cocheId=" + cocheId + ", matricula=" + matricula + ", marca=" + marca + ", modelo=" + modelo + ", extras=" + extras + ", cilintrada=" + cilintrada + ", a\u00f1o=" + año + ", numBastidor=" + numBastidor + ", precioVenta=" + precioMercado + '}';
     }
 
     

@@ -19,15 +19,15 @@ import java.util.ArrayList;
 public class GestionVehiculos {
 
     private Connection conexion;
-    private String cadenaConexion = "jdbc:mysql://10.0.1.96/incidencias?user=incidencias&password=incidencias";
-
+    private String cadenaConexion = "jdbc:oracle:thin:@127.0.0.1:1521:xe\", \"HR\", \"kk";
+        
     /**
      * Constructor vacío
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
     public GestionVehiculos() throws ExcepcionGestionVehiculos {
         try {
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("oracle.jdbc.driver.OracleDriver");
         } catch (ClassNotFoundException ex) {
             ExcepcionGestionVehiculos e = new ExcepcionGestionVehiculos(
                     -1,
@@ -94,17 +94,16 @@ public class GestionVehiculos {
         int registrosAfectados = 0;
         try {
             abrirConexion();
-            dml = "insert into coche(coche_id,matricula,marca,modelo,extras,cilindrada,año,numero_bastidor,precio_venta) values(?,?,?,?,?,?,?,?,?)";
+            dml = "insert into coche(coche_id,matricula,marca,modelo,extras,cilindrada,año,numero_bastidor,precio_mercado) values(PARTE_SEQ.NextValue,?,?,?,?,?,?,?,?)";
             sentenciaPreparada = conexion.prepareStatement(dml);
-            sentenciaPreparada.setInt(1, coche.getCocheId());
-            sentenciaPreparada.setString(2, coche.getMatricula());
-            sentenciaPreparada.setString(3, coche.getMarca());
-            sentenciaPreparada.setString(4, coche.getModelo());
-            sentenciaPreparada.setString(5, coche.getExtras());
-            sentenciaPreparada.setInt(6, coche.getCilintrada());
-            sentenciaPreparada.setInt(7, coche.getAño());
-            sentenciaPreparada.setString(8, coche.getNumBastidor());
-            sentenciaPreparada.setInt(9, coche.getPrecioVenta());
+            sentenciaPreparada.setString(1, coche.getMatricula());
+            sentenciaPreparada.setString(2, coche.getMarca());
+            sentenciaPreparada.setString(3, coche.getModelo());
+            sentenciaPreparada.setString(4, coche.getExtras());
+            sentenciaPreparada.setInt(5, coche.getCilintrada());
+            sentenciaPreparada.setInt(6, coche.getAño());
+            sentenciaPreparada.setString(7, coche.getNumBastidor());
+            sentenciaPreparada.setInt(8, coche.getPrecioMercado());
             registrosAfectados = sentenciaPreparada.executeUpdate();
             sentenciaPreparada.close();
             conexion.close();
@@ -112,7 +111,7 @@ public class GestionVehiculos {
             ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(ex.getErrorCode(), ex.getMessage(), null, dml);
             switch (ex.getErrorCode()) {
                 case 1400:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("La matricula,marca,modelo,cilindrada,año,numero de bastidor,precio de venta no pueden estar vacios");
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("La matricula,marca,modelo,cilindrada,año,numero de bastidor,precio de mercado no pueden estar vacios");
                     break;
                 case 1:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("La matricula y/o el numero de bastidor ya existe.");
@@ -150,7 +149,7 @@ public class GestionVehiculos {
             ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(ex.getErrorCode(), ex.getMessage(), "Error general del sistema. Consulte con el administrador.", null);
             switch (ex.getErrorCode()) {
                 case 2292:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("No se puede eliminar este coche porque tiene ventas asociadas");
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("No se puede eliminar este coche porque tiene partes asociados");
                     break;
                 default:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("Error general del sistema. Consulte con el administrador.");
@@ -177,7 +176,7 @@ public class GestionVehiculos {
         try {
             abrirConexion();
             dml ="update coche set matricula=?, marca=?,modelo=?,"
-                + "extras=?,cilindrada=?,año=?,numero_bastidor=?,precio_venta=? "
+                + "extras=?,cilindrada=?,año=?,numero_bastidor=?,precio_mercado=? "
                 + "where coche_id=" + cocheId;
             sentenciaPreparada = conexion.prepareStatement(dml);
             sentenciaPreparada.setString(1, coche.getMatricula());
@@ -187,7 +186,7 @@ public class GestionVehiculos {
             sentenciaPreparada.setInt(5, coche.getCilintrada());
             sentenciaPreparada.setInt(6, coche.getAño());
             sentenciaPreparada.setString(7, coche.getNumBastidor());
-            sentenciaPreparada.setInt(8, coche.getPrecioVenta());
+            sentenciaPreparada.setInt(8, coche.getPrecioMercado());
             registrosAfectados = sentenciaPreparada.executeUpdate();
             sentenciaPreparada.close();
             conexion.close();
@@ -239,7 +238,7 @@ public class GestionVehiculos {
                 coche.setCilintrada(resultado.getInt("cilindrada"));
                 coche.setAño(resultado.getInt("año"));
                 coche.setNumBastidor(resultado.getString("numero_bastidor"));
-                coche.setPrecioVenta(resultado.getInt("precio_venta"));
+                coche.setPrecioMercado(resultado.getInt("precio_mercado"));
             }
             resultado.close();
             sentenciaPreparada.close();
@@ -285,7 +284,7 @@ public class GestionVehiculos {
                 coche.setCilintrada(resultado.getInt("cilindrada"));
                 coche.setAño(resultado.getInt("año"));
                 coche.setNumBastidor(resultado.getString("numero_bastidor"));
-                coche.setPrecioVenta(resultado.getInt("precio_venta"));
+                coche.setPrecioMercado(resultado.getInt("precio_mercado"));
                 c.add(coche);
             }
             resultado.close();
@@ -304,21 +303,21 @@ public class GestionVehiculos {
     }
     
      /**
-     * Elimina una venta de la base de datos
+     * Elimina un parte de la base de datos
      * @author Diego Fernández Díaz
-     * @param ventaId Identificador de la venta a eliminar
-     * @return Cantidad de ventas eliminadas
+     * @param parteId Identificador del parte a eliminar
+     * @return Cantidad de partes eliminados
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public int EliminarVenta(String ventaId) throws ExcepcionGestionVehiculos {
+    public int EliminarParte(String parteId) throws ExcepcionGestionVehiculos {
         CallableStatement sentenciaLlamable = null;
         String llamada = null;
         int registrosAfectados = 0;
         try {
             abrirConexion();
-            llamada = "call ELIMINAR_VENTA(?)";
+            llamada = "call ELIMINAR_PARTE(?)";
             sentenciaLlamable = conexion.prepareCall(llamada);
-            sentenciaLlamable.setString(1, ventaId);
+            sentenciaLlamable.setString(1, parteId);
             registrosAfectados = sentenciaLlamable.executeUpdate();
             sentenciaLlamable.close();
             conexion.close();
@@ -339,28 +338,30 @@ public class GestionVehiculos {
     }
 
     /**
-     * Modifica una venta de la base de datos
+     * Modifica un parte de la base de datos
      * @author Diego Fernández Díaz
-     * @param ventaId Identificador de la venta a modificar
-     * @param venta Nuevos datos de la venta a modificar
-     * @return Cantidad de ventas modificadas
+     * @param parteId Identificador del parte a modificar
+     * @param parte Nuevos datos del parte a modificar
+     * @return Cantidad de partes modificados
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public int modificarVenta(int ventaId, Venta venta) throws ExcepcionGestionVehiculos {
+    public int modificarVenta(int parteId, Parte parte) throws ExcepcionGestionVehiculos {
         CallableStatement sentenciaLlamable = null;
         String llamada = null;
         int registrosAfectados = 0;
         try {
             abrirConexion();
-            llamada = "call MODIFICAR_VENTA(?,?,?)";
+            llamada = "call MODIFICAR_PARTE(?,?,?,?)";
             sentenciaLlamable = conexion.prepareCall(llamada);
-            sentenciaLlamable.setInt(1, ventaId);if (venta.getFechaCompra()== null) {
-                sentenciaLlamable.setNull(2, Types.DATE);
+            sentenciaLlamable.setInt(1, parteId);
+            sentenciaLlamable.setString(2, parte.getCodigo());
+            if (parte.getFecha()== null) {
+                sentenciaLlamable.setNull(3, Types.DATE);
             } else {
-                java.sql.Date fecha = new java.sql.Date(venta.getFechaCompra().getTime());
-                sentenciaLlamable.setObject(2, fecha, Types.DATE);
+                java.sql.Date fecha = new java.sql.Date(parte.getFecha().getTime());
+                sentenciaLlamable.setObject(3, fecha, Types.DATE);
             }
-            sentenciaLlamable.setInt(3, venta.getCocheId().getCocheId());
+            sentenciaLlamable.setInt(4, parte.getCocheId().getCocheId());
             registrosAfectados = sentenciaLlamable.executeUpdate();
             sentenciaLlamable.close();
             conexion.close();
@@ -389,27 +390,28 @@ public class GestionVehiculos {
         return registrosAfectados;
     }
       /**
-     * Modifica una venta de la base de datos
+     * Modifica un parte de la base de datos
      * @author Diego Fernández Díaz
-     * @param venta Nuevos datos de la venta a modificar
-     * @return Cantidad de ventas modificadas
+     * @param parte Nuevos datos del parte a modificar
+     * @return Cantidad de partes modificados
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public int InsetarVenta(Venta venta) throws ExcepcionGestionVehiculos {
+    public int InsetarParte(Parte parte) throws ExcepcionGestionVehiculos {
         CallableStatement sentenciaLlamable = null;
         String llamada = null;
         int registrosAfectados = 0;
         try {
             abrirConexion();
-            llamada = "call INSERTAR_VENTA(?,?)";
+            llamada = "call INSERTAR_PARTE(?,?,?)";
             sentenciaLlamable = conexion.prepareCall(llamada);
-            if (venta.getFechaCompra()== null) {
-                sentenciaLlamable.setNull(1, Types.DATE);
+            sentenciaLlamable.setString(1, parte.getCodigo());
+            if (parte.getFecha()== null) {
+                sentenciaLlamable.setNull(2, Types.DATE);
             } else {
-                java.sql.Date fecha = new java.sql.Date(venta.getFechaCompra().getTime());
-                sentenciaLlamable.setObject(1, fecha, Types.DATE);
+                java.sql.Date fecha = new java.sql.Date(parte.getFecha().getTime());
+                sentenciaLlamable.setObject(2, fecha, Types.DATE);
             }
-            sentenciaLlamable.setInt(2, venta.getCocheId().getCocheId());
+            sentenciaLlamable.setInt(3, parte.getCocheId().getCocheId());
             registrosAfectados = sentenciaLlamable.executeUpdate();
             sentenciaLlamable.close();
             conexion.close();
@@ -438,32 +440,33 @@ public class GestionVehiculos {
         return registrosAfectados;
     }
     /**
-     * Consulta una venta de la base de datos
+     * Consulta un parte de la base de datos
      * @author Diego Fernández Díaz
-     * @param ventaId Identificador de la venta a consultar
-     * @return venta a consultar
+     * @param parteId Identificador del parte a consultar
+     * @return parte a consultar
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public Venta leerVenta(int ventaId) throws ExcepcionGestionVehiculos {
+    public Parte leerParte(int parteId) throws ExcepcionGestionVehiculos {
         PreparedStatement sentenciaPreparada = null;
         String dql = null;
-        Venta venta=null;
+        Parte parte=null;
         Coche coche = null;
         try {
             abrirConexion();
-            dql = "SELECT * FROM venta WHERE venta_id=?";
+            dql = "SELECT * FROM parte WHERE parte_id=?";
             sentenciaPreparada = conexion.prepareStatement(dql);
-            sentenciaPreparada.setInt(1, ventaId);
+            sentenciaPreparada.setInt(1, parteId);
             sentenciaPreparada.executeQuery();
             
             ResultSet resultado = sentenciaPreparada.executeQuery(dql);
             while (resultado.next()) {
-                venta=new Venta();
-                venta.setVentaId(resultado.getInt("venta_id"));
-                venta.setFechaCompra(resultado.getDate("fecha_compra"));
+                parte=new Parte();
+                parte.setParteId(resultado.getInt("parte_id"));
+                parte.setCodigo(resultado.getString("codigo"));
+                parte.setFecha(resultado.getDate("fecha"));
                 coche = new Coche();
                 coche.setCocheId(resultado.getInt("coche_id"));
-                venta.setCocheId(coche);
+                parte.setCocheId(coche);
                 
             }
             resultado.close();
@@ -479,36 +482,37 @@ public class GestionVehiculos {
             cerrarConexion(conexion, sentenciaPreparada);
             throw excepcionGestionVehiculos;
         }
-        return venta;
+        return parte;
     }
 
     /**
-     * Consulta todos los coches de la base de datos
+     * Consulta todos los partes de la base de datos
      * @author Diego Fernández Díaz
-     * @return Lista de todos los coches
+     * @return Lista de todos los partes
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public ArrayList<Venta> leerVenta() throws ExcepcionGestionVehiculos {
+    public ArrayList<Parte> leerParte() throws ExcepcionGestionVehiculos {
         PreparedStatement sentenciaPreparada = null;
         String dql = null;
-        Venta venta = null;
+        Parte parte = null;
         Coche coche = null;
-        ArrayList<Venta> v = new ArrayList();
+        ArrayList<Parte> p = new ArrayList();
         try {
             abrirConexion();
-            dql = "SELECT * FROM venta";
+            dql = "SELECT * FROM parte";
             sentenciaPreparada = conexion.prepareStatement(dql);
             sentenciaPreparada.executeQuery();            
             
             ResultSet resultado = sentenciaPreparada.executeQuery(dql);
             while (resultado.next()) {
-                venta=new Venta();
-                venta.setVentaId(resultado.getInt("venta_id"));
-                venta.setFechaCompra(resultado.getDate("fecha_compra"));
+                parte=new Parte();
+                parte.setParteId(resultado.getInt("parte_id"));
+                parte.setCodigo(resultado.getString("codigo"));
+                parte.setFecha(resultado.getDate("fecha"));
                 coche = new Coche();
                 coche.setCocheId(resultado.getInt("coche_id"));
-                venta.setCocheId(coche);
-                v.add(venta);
+                parte.setCocheId(coche);
+                p.add(parte);
             }
             resultado.close();
             sentenciaPreparada.close();
@@ -522,6 +526,6 @@ public class GestionVehiculos {
             cerrarConexion(conexion, sentenciaPreparada);
             throw excepcionGestionVehiculos;
         }
-        return v;
+        return p;
     }
 }
