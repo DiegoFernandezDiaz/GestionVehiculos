@@ -13,17 +13,29 @@ import java.util.Date;
  */
 public class Coche 
 {
-    private int cocheId,cilindrada;
-    private String matricula,marca,modelo;
-    private Date FechaMatriculacion;
+    private int cocheId;
+    private String matricula;
+    private String marca;
+    private String modelo;
+    private String extras;
+    private int cilintrada;
+    private int año;
+    private String numBastidor;
+    private int precioVenta;
 
-    public Coche(int cocheId, int cilindrada, String matricula, String marca, String modelo, Date FechaMatriculacion) {
+    public Coche() {
+    }
+
+    public Coche(int cocheId, String matricula, String marca, String modelo, String extras, int cilintrada, int año, String numBastidor, int precioVenta) {
         this.cocheId = cocheId;
-        this.cilindrada = cilindrada;
         this.matricula = matricula;
         this.marca = marca;
         this.modelo = modelo;
-        this.FechaMatriculacion = FechaMatriculacion;
+        this.extras = extras;
+        this.cilintrada = cilintrada;
+        this.año = año;
+        this.numBastidor = numBastidor;
+        this.precioVenta = precioVenta;
     }
 
     public int getCocheId() {
@@ -32,14 +44,6 @@ public class Coche
 
     public void setCocheId(int cocheId) {
         this.cocheId = cocheId;
-    }
-
-    public int getCilindrada() {
-        return cilindrada;
-    }
-
-    public void setCilindrada(int cilindrada) {
-        this.cilindrada = cilindrada;
     }
 
     public String getMatricula() {
@@ -66,18 +70,53 @@ public class Coche
         this.modelo = modelo;
     }
 
-    public Date getFechaMatriculacion() {
-        return FechaMatriculacion;
+    public String getExtras() {
+        return extras;
     }
 
-    public void setFechaMatriculacion(Date FechaMatriculacion) {
-        this.FechaMatriculacion = FechaMatriculacion;
+    public void setExtras(String extras) {
+        this.extras = extras;
+    }
+
+    public int getCilintrada() {
+        return cilintrada;
+    }
+
+    public void setCilintrada(int cilintrada) {
+        this.cilintrada = cilintrada;
+    }
+
+    public int getAño() {
+        return año;
+    }
+
+    public void setAño(int año) {
+        this.año = año;
+    }
+
+    public String getNumBastidor() {
+        return numBastidor;
+    }
+
+    public void setNumBastidor(String numBastidor) {
+        this.numBastidor = numBastidor;
+    }
+
+    public int getPrecioVenta() {
+        return precioVenta;
+    }
+
+    public void setPrecioVenta(int precioVenta) {
+        this.precioVenta = precioVenta;
     }
 
     @Override
     public String toString() {
-        return "Coche{" + "cocheId=" + cocheId + ", cilindrada=" + cilindrada + ", matricula=" + matricula + ", marca=" + marca + ", modelo=" + modelo + ", FechaMatriculacion=" + FechaMatriculacion + '}';
+        return "Coche{" + "cocheId=" + cocheId + ", matricula=" + matricula + ", marca=" + marca + ", modelo=" + modelo + ", extras=" + extras + ", cilintrada=" + cilintrada + ", a\u00f1o=" + año + ", numBastidor=" + numBastidor + ", precioVenta=" + precioVenta + '}';
     }
+
+    
+    
     
     
 }
