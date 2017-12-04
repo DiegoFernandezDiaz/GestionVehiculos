@@ -9,6 +9,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 
 
@@ -20,7 +23,17 @@ public class GestionVehiculos {
 
     private Connection conexion;
     private String cadenaConexion = "jdbc:oracle:thin:@127.0.0.1:1521:xe\", \"HR\", \"kk";
-        
+    
+
+    public static Integer ASCENDENTE = 1;
+    public static Integer DESCENDENTE = 2;
+    public static Integer COCHE_MATRICULA = 10;
+    public static Integer COCHE_NUMERO_BASTIDOR = 11;
+    public static Integer COCHE_MARCA = 12;
+    public static Integer COCHE_MODELO = 13;
+    public static Integer PARTE_CODIGO = 14;
+    public static Integer PARTE_FECHA = 15;
+    public static Integer PARTE_COCHE = 16;
     /**
      * Constructor vacío
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
@@ -162,14 +175,14 @@ public class GestionVehiculos {
     }
 
     /**
-     * Modifica una región de la base de datos
+     * Modifica un coche de la base de datos
      * @author Diego Fernández Díaz
      * @param cocheId Identificador del coche a modificar
      * @param coche Nuevos datos del coche a modificar
      * @return Cantidad de coches modificados
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public int modificarRegion(int cocheId, Coche coche) throws ExcepcionGestionVehiculos {
+    public int modificarCoche(int cocheId, Coche coche) throws ExcepcionGestionVehiculos {
         String dml = null;
         int registrosAfectados = 0;
         PreparedStatement sentenciaPreparada = null;
@@ -262,14 +275,23 @@ public class GestionVehiculos {
      * @return Lista de todos los coches
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public ArrayList<Coche> leerCoche() throws ExcepcionGestionVehiculos {
+    public ArrayList<Coche> leerCoches() throws ExcepcionGestionVehiculos {
+        String dql = "SELECT * FROM coche";
+        return leerCoches(dql);
+    }
+    /**
+     * Consulta todos los coches de la base de datos
+     * @author Diego Fernández Díaz
+     * @param dql
+     * @return Lista de todos los coches
+     * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
+     */
+    private ArrayList<Coche> leerCoches(String dql) throws ExcepcionGestionVehiculos {
         PreparedStatement sentenciaPreparada = null;
-        String dql = null;
         Coche coche = null;
         ArrayList<Coche> c = new ArrayList();
         try {
             abrirConexion();
-            dql = "SELECT * FROM coche";
             sentenciaPreparada = conexion.prepareStatement(dql);
             sentenciaPreparada.executeQuery();            
             
@@ -301,6 +323,35 @@ public class GestionVehiculos {
         }
         return c;
     }
+    public ArrayList<Coche> leerCoches(String matricula,String marca,String modelo,
+                                        String numBastidor, Integer criterioOrden, Integer orden) throws ExcepcionGestionVehiculos{
+        String dql = "SELECT * FROM coche where 1=1 ";
+        if (matricula !=null) dql = dql + " and matricula like " + matricula;
+        if (marca != null) dql = dql + " and marca like %"+marca+"%";
+        if (modelo != null) dql = dql + " and modelo like %"+modelo+"%";
+        if (numBastidor != null) dql = dql + " and numero_bastidor like "+numBastidor;
+        if (criterioOrden == COCHE_MARCA) {
+            dql = dql + " order by marca";
+            if (orden == ASCENDENTE) dql = dql + " asc";
+            if (orden == DESCENDENTE) dql = dql + " desc";
+        }
+        if (criterioOrden == COCHE_MATRICULA) {
+            dql = dql + " order by matricula";
+            if (orden == ASCENDENTE) dql = dql + " asc";
+            if (orden == DESCENDENTE) dql = dql + " desc";
+        }
+        if (criterioOrden == COCHE_MODELO) {
+            dql = dql + " order by modelo";
+            if (orden == ASCENDENTE) dql = dql + " asc";
+            if (orden == DESCENDENTE) dql = dql + " desc";
+        }
+        if (criterioOrden == COCHE_NUMERO_BASTIDOR) {
+            dql = dql + " order by numero_bastidor";
+            if (orden == ASCENDENTE) dql = dql + " asc";
+            if (orden == DESCENDENTE) dql = dql + " desc";
+        }
+        return leerCoches(dql);
+    }
     
      /**
      * Elimina un parte de la base de datos
@@ -309,7 +360,7 @@ public class GestionVehiculos {
      * @return Cantidad de partes eliminados
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public int EliminarParte(String parteId) throws ExcepcionGestionVehiculos {
+    public int EliminarParte(int parteId) throws ExcepcionGestionVehiculos {
         CallableStatement sentenciaLlamable = null;
         String llamada = null;
         int registrosAfectados = 0;
@@ -317,7 +368,7 @@ public class GestionVehiculos {
             abrirConexion();
             llamada = "call ELIMINAR_PARTE(?)";
             sentenciaLlamable = conexion.prepareCall(llamada);
-            sentenciaLlamable.setString(1, parteId);
+            sentenciaLlamable.setInt(1, parteId);
             registrosAfectados = sentenciaLlamable.executeUpdate();
             sentenciaLlamable.close();
             conexion.close();
@@ -345,7 +396,7 @@ public class GestionVehiculos {
      * @return Cantidad de partes modificados
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public int modificarVenta(int parteId, Parte parte) throws ExcepcionGestionVehiculos {
+    public int modificarParte(int parteId, Parte parte) throws ExcepcionGestionVehiculos {
         CallableStatement sentenciaLlamable = null;
         String llamada = null;
         int registrosAfectados = 0;
@@ -396,7 +447,7 @@ public class GestionVehiculos {
      * @return Cantidad de partes modificados
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public int InsetarParte(Parte parte) throws ExcepcionGestionVehiculos {
+    public int InsertarParte(Parte parte) throws ExcepcionGestionVehiculos {
         CallableStatement sentenciaLlamable = null;
         String llamada = null;
         int registrosAfectados = 0;
@@ -484,22 +535,32 @@ public class GestionVehiculos {
         }
         return parte;
     }
-
     /**
      * Consulta todos los partes de la base de datos
      * @author Diego Fernández Díaz
      * @return Lista de todos los partes
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public ArrayList<Parte> leerParte() throws ExcepcionGestionVehiculos {
+    public ArrayList<Parte> leerPartes() throws ExcepcionGestionVehiculos {
+        String dql = "SELECT * FROM parte";
+        return leerParte(dql);
+    }
+    
+    /**
+     * Consulta todos los partes de la base de datos
+     * @author Diego Fernández Díaz
+     * @param dql
+     * @return Lista de todos los partes
+     * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
+     */
+    private ArrayList<Parte> leerParte(String dql) throws ExcepcionGestionVehiculos {
         PreparedStatement sentenciaPreparada = null;
-        String dql = null;
         Parte parte = null;
         Coche coche = null;
         ArrayList<Parte> p = new ArrayList();
         try {
             abrirConexion();
-            dql = "SELECT * FROM parte";
+            
             sentenciaPreparada = conexion.prepareStatement(dql);
             sentenciaPreparada.executeQuery();            
             
@@ -527,5 +588,35 @@ public class GestionVehiculos {
             throw excepcionGestionVehiculos;
         }
         return p;
+    }public ArrayList<Parte> leerPartes(String codigo,Date fecha,Integer cocheId,Integer criterioOrden, Integer orden) throws ExcepcionGestionVehiculos{
+        String dql = "SELECT * FROM parte where 1=1 ";
+        if (codigo !=null) dql = dql + " and codigo like " + codigo;
+        if (fecha != null) dql = dql + " and date_format(hi.fecha,'%Y-%m-%d') = '"+ formatearFecha(fecha)+"'";
+        if (cocheId != null) dql = dql + " and coche_id like %"+cocheId+"%";
+        if (criterioOrden == PARTE_CODIGO) {
+            dql = dql + " order by marca";
+            if (orden == ASCENDENTE) dql = dql + " asc";
+            if (orden == DESCENDENTE) dql = dql + " desc";
+        }
+        if (criterioOrden == PARTE_FECHA) {
+            dql = dql + " order by matricula";
+            if (orden == ASCENDENTE) dql = dql + " asc";
+            if (orden == DESCENDENTE) dql = dql + " desc";
+        }
+        if (criterioOrden == PARTE_COCHE) {
+            dql = dql + " order by modelo";
+            if (orden == ASCENDENTE) dql = dql + " asc";
+            if (orden == DESCENDENTE) dql = dql + " desc";
+        }
+        
+        return leerParte(dql);
     }
+    
+    private String formatearFecha(Date fecha)
+    {
+        GregorianCalendar gc = new GregorianCalendar();
+        gc.setTime(fecha);
+        return gc.get(Calendar.YEAR)+ "-"+(gc.get(Calendar.MONTH)+1)+"-"+gc.get(Calendar.DAY_OF_MONTH);
+    }
+    
 }
