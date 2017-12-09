@@ -8,6 +8,9 @@ package prueba;
 import gestionvehiculos.Coche;
 import gestionvehiculos.ExcepcionGestionVehiculos;
 import gestionvehiculos.GestionVehiculos;
+import gestionvehiculos.Parte;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -15,9 +18,16 @@ import gestionvehiculos.GestionVehiculos;
  */
 public class prueba {
     
-    public static void main(String[] args) throws ExcepcionGestionVehiculos {
-    GestionVehiculos gs = new GestionVehiculos();
-        Coche c = new Coche(0, "1234ABS", "FORD", "FIESTA", "GPS", 1900, 2016, "adcfsv1234ds32fsd", 1540);
+    public static void main(String[] args) {
+    GestionVehiculos gs;
+        try {
+            gs = new GestionVehiculos();
+            Coche c = new Coche(1, "1233WBS", null, "FIESTA", "GPS", 1900, 2016, "sdYav1234ds32fsd", 1540);
+            Parte p = new Parte(1, "7", java.sql.Date.valueOf("2017-1-28"), c);
         System.out.println(gs.insertarCoche(c));
+        } catch (ExcepcionGestionVehiculos ex) {
+            System.out.println(ex.getSentenciaSQL());
+        }
+        
     }
 }

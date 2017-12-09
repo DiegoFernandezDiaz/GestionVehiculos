@@ -22,9 +22,7 @@ import java.util.GregorianCalendar;
 public class GestionVehiculos {
 
     private Connection conexion;
-    private String cadenaConexion = "jdbc:oracle:thin:@10.0.2.15:1521:xe\", \"HR\", \"kk";
     
-
     public static Integer ASCENDENTE = 1;
     public static Integer DESCENDENTE = 2;
     public static Integer COCHE_MATRICULA = 10;
@@ -56,7 +54,7 @@ public class GestionVehiculos {
      */
     private void abrirConexion() throws ExcepcionGestionVehiculos {
         try {
-            conexion = DriverManager.getConnection(cadenaConexion);
+            conexion = DriverManager.getConnection("jdbc:oracle:thin:@127.0.0.1:1521/xe", "aseguradora", "usuario");
         } catch (SQLException ex) {
             ExcepcionGestionVehiculos e = new ExcepcionGestionVehiculos(
                     ex.getErrorCode(),
@@ -66,7 +64,6 @@ public class GestionVehiculos {
             throw e;
         }
     }
-
     /**
      * Cierra de forma ordenada un objeto Statement y la conexión de la base de 
      * datos
@@ -79,7 +76,6 @@ public class GestionVehiculos {
            conexion.close();
         } catch (SQLException | NullPointerException ex) {}
     }
-    
     /**
      * Cierra de forma ordenada un objeto Statement y la conexión de la base de 
      * datos
@@ -93,7 +89,6 @@ public class GestionVehiculos {
         } catch (SQLException | NullPointerException ex) {}
        
     }
-    
     /**
      * Inserta un coche en la base de datos.
      * @author Diego Fernández Díaz
@@ -107,7 +102,7 @@ public class GestionVehiculos {
         int registrosAfectados = 0;
         try {
             abrirConexion();
-            dml = "insert into coche(coche_id,matricula,marca,modelo,extras,cilindrada,año,numero_bastidor,precio_mercado) values(PARTE_SEQ.NextValue,?,?,?,?,?,?,?,?)";
+            dml = "insert into coche(COCHE_ID,MATRICULA,MARCA,MODELO,EXTRAS,CILINDRADA,ANO,NUMERO_BASTIDOR,PRECIO_MERCADO) values(COCHE_SEQ.NEXTVAL,?,?,?,?,?,?,?,?)";
             sentenciaPreparada = conexion.prepareStatement(dml);
             sentenciaPreparada.setString(1, coche.getMatricula());
             sentenciaPreparada.setString(2, coche.getMarca());
@@ -120,14 +115,31 @@ public class GestionVehiculos {
             registrosAfectados = sentenciaPreparada.executeUpdate();
             sentenciaPreparada.close();
             conexion.close();
+            return registrosAfectados;
         } catch (SQLException ex) {
-            ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(ex.getErrorCode(), ex.getMessage(), null, dml);
+            ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(
+                    ex.getErrorCode(),
+                    ex.getMessage(), 
+                    null, 
+                    dml);
             switch (ex.getErrorCode()) {
                 case 1400:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("La matricula,marca,modelo,cilindrada,año,numero de bastidor,precio de mercado no pueden estar vacios");
                     break;
                 case 1:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("La matricula y/o el numero de bastidor ya existe.");
+                    break;
+                case 20002:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("Los 4 primeros caracteres de la matricula tiene que ser un numero.");
+                    break;  
+                case 20003:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("Los 3 ultimos caracteres de la matricula tiene que ser una letra.");
+                    break;
+                case 12899:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("El numero de bastidor solo pueden ser 17 caracteres y/o la matricula solo puede tener 7 caracteres");
+                    break;
+                case 20001:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("El numero de bastidor no puede contener ninguno de estos caracteres: I, O, Q, Ñ.");
                     break;
                 default:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("Error en el sistema. Consulta con el administrador.");
@@ -136,9 +148,7 @@ public class GestionVehiculos {
             cerrarConexion(conexion, sentenciaPreparada);
             throw excepcionGestionVehiculos;
         }
-        return registrosAfectados;
     }
-
     /**
      * Elimina un coche de la base de datos
      * @author Diego Fernández Díaz
@@ -146,7 +156,7 @@ public class GestionVehiculos {
      * @return Cantidad de coches eliminados
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public int borrarCoche(int cocheId) throws ExcepcionGestionVehiculos {
+    public int eliminarCoche(int cocheId) throws ExcepcionGestionVehiculos {
         PreparedStatement sentenciaPreparada = null;
         String dml = null;
         int registrosAfectados = 0;
@@ -158,8 +168,13 @@ public class GestionVehiculos {
             registrosAfectados = sentenciaPreparada.executeUpdate();
             sentenciaPreparada.close();
             conexion.close();
+            return registrosAfectados;
         } catch (SQLException ex) {
-            ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(ex.getErrorCode(), ex.getMessage(), "Error general del sistema. Consulte con el administrador.", null);
+            ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(
+                    ex.getErrorCode(), 
+                    ex.getMessage(), 
+                    null,
+                    dml);
             switch (ex.getErrorCode()) {
                 case 2292:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("No se puede eliminar este coche porque tiene partes asociados");
@@ -171,9 +186,7 @@ public class GestionVehiculos {
             cerrarConexion(conexion, sentenciaPreparada);
             throw excepcionGestionVehiculos;
         }
-        return registrosAfectados;
     }
-
     /**
      * Modifica un coche de la base de datos
      * @author Diego Fernández Díaz
@@ -189,7 +202,7 @@ public class GestionVehiculos {
         try {
             abrirConexion();
             dml ="update coche set matricula=?, marca=?,modelo=?,"
-                + "extras=?,cilindrada=?,año=?,numero_bastidor=?,precio_mercado=? "
+                + "extras=?,cilindrada=?,ano=?,numero_bastidor=?,precio_mercado=? "
                 + "where coche_id=" + cocheId;
             sentenciaPreparada = conexion.prepareStatement(dml);
             sentenciaPreparada.setString(1, coche.getMatricula());
@@ -202,26 +215,41 @@ public class GestionVehiculos {
             sentenciaPreparada.setInt(8, coche.getPrecioMercado());
             registrosAfectados = sentenciaPreparada.executeUpdate();
             sentenciaPreparada.close();
-            conexion.close();
+            conexion.close();        
+            return registrosAfectados;
             } catch (SQLException ex) {
-            ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(ex.getErrorCode(), ex.getMessage(), "Error general del sistema. Consulte con el administrador.", null);
+            ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(
+                    ex.getErrorCode(),
+                    ex.getMessage(),
+                    null,
+                    dml);
             switch (ex.getErrorCode()) {
-                case 2292:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("No se puede modificar el codigo del continente mientras tenga paises asociados.");
+                case 1400:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("La matricula,marca,modelo,cilindrada,año,numero de bastidor,precio de mercado no pueden estar vacios");
                     break;
                 case 1:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("No se puede modificar el código del continente porque el nuevo código está siendo utilizado por otro continente.");
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("La matricula y/o el numero de bastidor ya existe.");
+                    break;
+                case 20002:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("Los 4 primeros caracteres de la matricula tiene que ser un numero.");
+                    break;  
+                case 20003:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("Los 3 ultimos caracteres de la matricula tiene que ser una letra.");
+                    break;
+                case 12899:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("El numero de bastidor solo pueden ser 17 caracteres y/o la matricula solo puede tener 7 caracteres");
+                    break;
+                case 20001:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("El numero de bastidor no puede contener ninguno de estos caracteres: I, O, Q, Ñ.");
                     break;
                 default:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("Error en el sistema. Consulta con el administrador" + ex);
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("Error en el sistema. Consulta con el administrador.");
                     break;
             }
             cerrarConexion(conexion, sentenciaPreparada);
             throw excepcionGestionVehiculos;
         }
-        return registrosAfectados;
     }
-
     /**
      * Consulta un coche de la base de datos
      * @author Diego Fernández Díaz
@@ -239,7 +267,6 @@ public class GestionVehiculos {
             sentenciaPreparada = conexion.prepareStatement(dql);
             sentenciaPreparada.setInt(1, cocheId);
             sentenciaPreparada.executeQuery();
-            
             ResultSet resultado = sentenciaPreparada.executeQuery(dql);
             while (resultado.next()) {
                 coche=new Coche();
@@ -249,14 +276,14 @@ public class GestionVehiculos {
                 coche.setModelo(resultado.getString("modelo"));
                 coche.setExtras(resultado.getString("extras"));
                 coche.setCilintrada(resultado.getInt("cilindrada"));
-                coche.setAño(resultado.getInt("año"));
+                coche.setAño(resultado.getInt("ano"));
                 coche.setNumBastidor(resultado.getString("numero_bastidor"));
                 coche.setPrecioMercado(resultado.getInt("precio_mercado"));
             }
             resultado.close();
             sentenciaPreparada.close();
             conexion.close();
-            
+            return coche;
         } catch (SQLException ex) {
             ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(
                     ex.getErrorCode(), 
@@ -266,9 +293,7 @@ public class GestionVehiculos {
             cerrarConexion(conexion, sentenciaPreparada);
             throw excepcionGestionVehiculos;
         }
-        return coche;
     }
-
     /**
      * Consulta todos los coches de la base de datos
      * @author Diego Fernández Díaz
@@ -294,7 +319,6 @@ public class GestionVehiculos {
             abrirConexion();
             sentenciaPreparada = conexion.prepareStatement(dql);
             sentenciaPreparada.executeQuery();            
-            
             ResultSet resultado = sentenciaPreparada.executeQuery(dql);
             while (resultado.next()) {
                 coche = new Coche();
@@ -304,7 +328,7 @@ public class GestionVehiculos {
                 coche.setModelo(resultado.getString("modelo"));
                 coche.setExtras(resultado.getString("extras"));
                 coche.setCilintrada(resultado.getInt("cilindrada"));
-                coche.setAño(resultado.getInt("año"));
+                coche.setAño(resultado.getInt("ano"));
                 coche.setNumBastidor(resultado.getString("numero_bastidor"));
                 coche.setPrecioMercado(resultado.getInt("precio_mercado"));
                 c.add(coche);
@@ -312,6 +336,7 @@ public class GestionVehiculos {
             resultado.close();
             sentenciaPreparada.close();
             conexion.close();
+            return c;
         } catch (SQLException ex) {
             ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(
                     ex.getErrorCode(), 
@@ -321,8 +346,19 @@ public class GestionVehiculos {
             cerrarConexion(conexion, sentenciaPreparada);
             throw excepcionGestionVehiculos;
         }
-        return c;
     }
+    /**
+     * Consulta todos los coches de la base de datos
+     * @author Diego Fernández Díaz
+     * @param matricula  matricula del coche
+     * @param marca  marca del coche
+     * @param modelo modelo del coche
+     * @param numBastidor numero del bastidor del coche 
+     * @param criterioOrden incica con que criterio se va a ordenar
+     * @param orden numero que ordena ascendente o descendente
+     * @return Lista de todos los coches
+     * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
+     */
     public ArrayList<Coche> leerCoches(String matricula,String marca,String modelo,
                                         String numBastidor, Integer criterioOrden, Integer orden) throws ExcepcionGestionVehiculos{
         String dql = "SELECT * FROM coche where 1=1 ";
@@ -352,102 +388,14 @@ public class GestionVehiculos {
         }
         return leerCoches(dql);
     }
-    
-     /**
-     * Elimina un parte de la base de datos
-     * @author Diego Fernández Díaz
-     * @param parteId Identificador del parte a eliminar
-     * @return Cantidad de partes eliminados
-     * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
-     */
-    public int EliminarParte(int parteId) throws ExcepcionGestionVehiculos {
-        CallableStatement sentenciaLlamable = null;
-        String llamada = null;
-        int registrosAfectados = 0;
-        try {
-            abrirConexion();
-            llamada = "call ELIMINAR_PARTE(?)";
-            sentenciaLlamable = conexion.prepareCall(llamada);
-            sentenciaLlamable.setInt(1, parteId);
-            registrosAfectados = sentenciaLlamable.executeUpdate();
-            sentenciaLlamable.close();
-            conexion.close();
-        } catch (SQLException ex) {
-            ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(ex.getErrorCode(), ex.getMessage(), "Error general del sistema. Consulte con el administrador.", null);
-            switch (ex.getErrorCode()) {
-                case 2292:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("No se puede borrar porque tiene localidades asociadas");
-                    break;
-                default:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("Error general del sistema. Consulte con el administrador.");
-                    break;
-            }
-            cerrarConexion(conexion, sentenciaLlamable);
-            throw excepcionGestionVehiculos;
-        }
-        return registrosAfectados;
-    }
-
     /**
-     * Modifica un parte de la base de datos
-     * @author Diego Fernández Díaz
-     * @param parteId Identificador del parte a modificar
-     * @param parte Nuevos datos del parte a modificar
-     * @return Cantidad de partes modificados
-     * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
-     */
-    public int modificarParte(int parteId, Parte parte) throws ExcepcionGestionVehiculos {
-        CallableStatement sentenciaLlamable = null;
-        String llamada = null;
-        int registrosAfectados = 0;
-        try {
-            abrirConexion();
-            llamada = "call MODIFICAR_PARTE(?,?,?,?)";
-            sentenciaLlamable = conexion.prepareCall(llamada);
-            sentenciaLlamable.setInt(1, parteId);
-            sentenciaLlamable.setString(2, parte.getCodigo());
-            if (parte.getFecha()== null) {
-                sentenciaLlamable.setNull(3, Types.DATE);
-            } else {
-                java.sql.Date fecha = new java.sql.Date(parte.getFecha().getTime());
-                sentenciaLlamable.setObject(3, fecha, Types.DATE);
-            }
-            sentenciaLlamable.setInt(4, parte.getCocheId().getCocheId());
-            registrosAfectados = sentenciaLlamable.executeUpdate();
-            sentenciaLlamable.close();
-            conexion.close();
-        } catch (SQLException ex) {
-            ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(ex.getErrorCode(), ex.getMessage(), null, llamada);
-            switch (ex.getErrorCode()) {
-                case 2292:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("No se puede modificar el identificador, tiene localidades asociadas.");
-                    break;
-                case 2291:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("La region no existe");
-                    break;
-                case 1407:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("El identificador del pais no puede ser nulo");
-                    break;
-                case 1:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("El identificador de pais no puede repetirse");
-                    break;
-                default:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("Error en el sistema. Consulta con el administrador");
-                    break;
-            }
-            cerrarConexion(conexion, sentenciaLlamable);
-            throw excepcionGestionVehiculos;
-        }
-        return registrosAfectados;
-    }
-      /**
-     * Modifica un parte de la base de datos
-     * @author Diego Fernández Díaz
-     * @param parte Nuevos datos del parte a modificar
-     * @return Cantidad de partes modificados
-     * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
-     */
-    public int InsertarParte(Parte parte) throws ExcepcionGestionVehiculos {
+    * Inserta un parte de la base de datos
+    * @author Diego Fernández Díaz
+    * @param parte Nuevos datos del parte a insertar
+    * @return Cantidad de partes modificados
+    * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
+    */
+    public int insertarParte(Parte parte) throws ExcepcionGestionVehiculos {
         CallableStatement sentenciaLlamable = null;
         String llamada = null;
         int registrosAfectados = 0;
@@ -466,20 +414,25 @@ public class GestionVehiculos {
             registrosAfectados = sentenciaLlamable.executeUpdate();
             sentenciaLlamable.close();
             conexion.close();
+            return registrosAfectados;
         } catch (SQLException ex) {
-            ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(ex.getErrorCode(), ex.getMessage(), null, llamada);
+            ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(
+                    ex.getErrorCode(), 
+                    ex.getMessage(), 
+                    null, 
+                    llamada);
             switch (ex.getErrorCode()) {
-                case 2292:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("No se puede modificar el identificador, tiene localidades asociadas.");
-                    break;
                 case 2291:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("La region no existe");
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("El coche no existe");
                     break;
                 case 1407:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("El identificador del pais no puede ser nulo");
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("El codigo,la fecha y/o el coche no pueden ser nulos");
                     break;
                 case 1:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("El identificador de pais no puede repetirse");
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("El codigo no puede repetirse");
+                    break;
+                case 20004:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("Un vehiculo no puede tener mas de dos partes al mes");
                     break;
                 default:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("Error en el sistema. Consulta con el administrador");
@@ -488,7 +441,88 @@ public class GestionVehiculos {
             cerrarConexion(conexion, sentenciaLlamable);
             throw excepcionGestionVehiculos;
         }
-        return registrosAfectados;
+    }
+    /**
+     * Modifica un parte de la base de datos
+     * @author Diego Fernández Díaz
+     * @param parteId Identificador del parte a modificar
+     * @param parte Nuevos datos del parte a modificar
+     * @return Cantidad de partes modificados
+     * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
+     */
+    public int modificarParte(int parteId, Parte parte) throws ExcepcionGestionVehiculos {
+        CallableStatement sentenciaLlamable = null;
+        String llamada = null;
+        int registrosAfectados = 0;
+        try {
+            abrirConexion();
+            llamada = "call MODIFICAR_PARTE(?,?,?)";
+            sentenciaLlamable = conexion.prepareCall(llamada);
+            sentenciaLlamable.setInt(1, parteId);
+            sentenciaLlamable.setString(2, parte.getCodigo());
+            if (parte.getFecha()== null) {
+                sentenciaLlamable.setNull(3, Types.DATE);
+            } else {
+                java.sql.Date fecha = new java.sql.Date(parte.getFecha().getTime());
+                sentenciaLlamable.setObject(3, fecha, Types.DATE);
+            }
+            registrosAfectados = sentenciaLlamable.executeUpdate();
+            sentenciaLlamable.close();
+            conexion.close();
+            return registrosAfectados;
+        } catch (SQLException ex) {
+            ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(
+                    ex.getErrorCode(),
+                    ex.getMessage(),
+                    null, 
+                    llamada);
+            switch (ex.getErrorCode()) {
+                case 1407:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("El codigo y/o la fecha   no pueden ser nulos");
+                    break;
+                case 1:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("El codigo no puede repetirse");
+                    break;
+                case 20004:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("Un vehiculo no puede tener mas de dos partes al mes");
+                    break;
+                default:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("Error en el sistema. Consulta con el administrador");
+                    break;
+            }
+            cerrarConexion(conexion, sentenciaLlamable);
+            throw excepcionGestionVehiculos;
+        }
+    }
+    /**
+     * Elimina un parte de la base de datos
+     * @author Diego Fernández Díaz
+     * @param parteId Identificador del parte a eliminar
+     * @return Cantidad de partes eliminados
+     * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
+     */
+    public int EliminarParte(int parteId) throws ExcepcionGestionVehiculos {
+        CallableStatement sentenciaLlamable = null;
+        String llamada = null;
+        int registrosAfectados = 0;
+        try {
+            abrirConexion();
+            llamada = "call ELIMINAR_PARTE(?)";
+            sentenciaLlamable = conexion.prepareCall(llamada);
+            sentenciaLlamable.setInt(1, parteId);
+            registrosAfectados = sentenciaLlamable.executeUpdate();
+            sentenciaLlamable.close();
+            conexion.close();
+            return registrosAfectados;
+        }catch (SQLException ex) {
+            ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(
+                    ex.getErrorCode(), 
+                    ex.getMessage(), 
+                    "Error general del sistema. Consulte con el administrador.", 
+                    llamada);
+            cerrarConexion(conexion, sentenciaLlamable);
+            throw excepcionGestionVehiculos;
+        }
     }
     /**
      * Consulta un parte de la base de datos
@@ -508,7 +542,6 @@ public class GestionVehiculos {
             sentenciaPreparada = conexion.prepareStatement(dql);
             sentenciaPreparada.setInt(1, parteId);
             sentenciaPreparada.executeQuery();
-            
             ResultSet resultado = sentenciaPreparada.executeQuery(dql);
             while (resultado.next()) {
                 parte=new Parte();
@@ -523,7 +556,7 @@ public class GestionVehiculos {
             resultado.close();
             sentenciaPreparada.close();
             conexion.close();
-            
+            return parte;
         } catch (SQLException ex) {
             ExcepcionGestionVehiculos excepcionGestionVehiculos = new ExcepcionGestionVehiculos(
                     ex.getErrorCode(), 
@@ -533,7 +566,6 @@ public class GestionVehiculos {
             cerrarConexion(conexion, sentenciaPreparada);
             throw excepcionGestionVehiculos;
         }
-        return parte;
     }
     /**
      * Consulta todos los partes de la base de datos
@@ -545,7 +577,6 @@ public class GestionVehiculos {
         String dql = "SELECT * FROM parte";
         return leerParte(dql);
     }
-    
     /**
      * Consulta todos los partes de la base de datos
      * @author Diego Fernández Díaz
@@ -588,7 +619,19 @@ public class GestionVehiculos {
             throw excepcionGestionVehiculos;
         }
         return p;
-    }public ArrayList<Parte> leerPartes(String codigo,Date fecha,Integer cocheId,Integer criterioOrden, Integer orden) throws ExcepcionGestionVehiculos{
+    }
+    /**
+     * Consulta todos los partes de la base de datos
+     * @author Diego Fernández Díaz
+     * @param codigo codigo del parte
+     * @param fecha fecha del parte
+     * @param cocheId  id del coche
+     * @param criterioOrden incica con que criterio se va a ordenar
+     * @param orden numero que ordena ascendente o descendente
+     * @return Lista de todos los partes
+     * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
+     */
+    public ArrayList<Parte> leerPartes(String codigo,Date fecha,Integer cocheId,Integer criterioOrden, Integer orden) throws ExcepcionGestionVehiculos{
         String dql = "SELECT * FROM parte where 1=1 ";
         if (codigo !=null) dql = dql + " and codigo like " + codigo;
         if (fecha != null) dql = dql + " and date_format(hi.fecha,'%Y-%m-%d') = '"+ formatearFecha(fecha)+"'";
@@ -608,15 +651,18 @@ public class GestionVehiculos {
             if (orden == ASCENDENTE) dql = dql + " asc";
             if (orden == DESCENDENTE) dql = dql + " desc";
         }
-        
         return leerParte(dql);
     }
-    
+    /**
+     * Formatea una fecha a cadena
+     * @author Diego Fernández Díaz
+     * @param fecha fecha a formatear
+     * @return cadena con la fecha en formato YYYY-MM-DD
+     */
     private String formatearFecha(Date fecha)
     {
         GregorianCalendar gc = new GregorianCalendar();
         gc.setTime(fecha);
         return gc.get(Calendar.YEAR)+ "-"+(gc.get(Calendar.MONTH)+1)+"-"+gc.get(Calendar.DAY_OF_MONTH);
     }
-    
 }
