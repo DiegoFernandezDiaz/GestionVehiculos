@@ -501,7 +501,7 @@ public class GestionVehiculos {
      * @return Cantidad de partes eliminados
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public int EliminarParte(int parteId) throws ExcepcionGestionVehiculos {
+    public int eliminarParte(int parteId) throws ExcepcionGestionVehiculos {
         CallableStatement sentenciaLlamable = null;
         String llamada = null;
         int registrosAfectados = 0;
