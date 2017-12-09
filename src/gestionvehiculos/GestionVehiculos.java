@@ -22,7 +22,7 @@ import java.util.GregorianCalendar;
 public class GestionVehiculos {
 
     private Connection conexion;
-    private String cadenaConexion = "jdbc:oracle:thin:@127.0.0.1:1521:xe\", \"HR\", \"kk";
+    private String cadenaConexion = "jdbc:oracle:thin:@10.0.2.15:1521:xe\", \"HR\", \"kk";
     
 
     public static Integer ASCENDENTE = 1;
