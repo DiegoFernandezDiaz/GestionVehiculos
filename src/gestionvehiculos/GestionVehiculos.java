@@ -141,6 +141,12 @@ public class GestionVehiculos {
                 case 20001:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("El numero de bastidor no puede contener ninguno de estos caracteres: I, O, Q, Ñ.");
                     break;
+                case 2290:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("Error por los siguientes casos: \n"
+                                                                    + "La cilindrada tiene que ser menor de 10000 \n"
+                                                                    + "El precio de mercado tiene que ser mayor de 100 \n"
+                                                                    + "El año solo puede ser de 4 cifras");
+                    break;
                 default:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("Error en el sistema. Consulta con el administrador.");
                     break;
@@ -241,6 +247,12 @@ public class GestionVehiculos {
                     break;
                 case 20001:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("El numero de bastidor no puede contener ninguno de estos caracteres: I, O, Q, Ñ.");
+                    break;
+                case 2290:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("Error por los siguientes casos: \n"
+                                                                    + "La cilindrada tiene que ser menor de 10000 \n"
+                                                                    + "El precio de mercado tiene que ser mayor de 100 \n"
+                                                                    + "El año solo puede ser de 4 cifras");
                     break;
                 default:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("Error en el sistema. Consulta con el administrador.");
