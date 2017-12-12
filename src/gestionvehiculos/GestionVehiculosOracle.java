@@ -19,7 +19,7 @@ import java.util.GregorianCalendar;
  *
  * @author Diego Fernández Díaz
  */
-public class GestionVehiculos {
+public class GestionVehiculosOracle {
 
     private Connection conexion;
     
@@ -36,7 +36,7 @@ public class GestionVehiculos {
      * Constructor vacío
      * @throws ExcepcionGestionVehiculos si se produce cualquier excepcion
      */
-    public GestionVehiculos() throws ExcepcionGestionVehiculos {
+    public GestionVehiculosOracle() throws ExcepcionGestionVehiculos {
         try {
             Class.forName("oracle.jdbc.driver.OracleDriver");
         } catch (ClassNotFoundException ex) {
