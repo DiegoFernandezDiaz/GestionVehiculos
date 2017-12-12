@@ -54,7 +54,7 @@ public class GestionVehiculos {
      */
     private void abrirConexion() throws ExcepcionGestionVehiculos {
         try {
-            conexion = DriverManager.getConnection("jdbc:oracle:thin:@127.0.0.1:1521/xe", "aseguradora", "usuario");
+            conexion = DriverManager.getConnection("jdbc:oracle:thin:@127.0.0.1:1521/xe", "aseguradora", "kk");
         } catch (SQLException ex) {
             ExcepcionGestionVehiculos e = new ExcepcionGestionVehiculos(
                     ex.getErrorCode(),
