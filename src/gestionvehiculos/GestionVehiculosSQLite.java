@@ -1,34 +1,43 @@
-
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package gestionvehiculos;
 
+import static gestionvehiculos.GestionVehiculosInterface.ASCENDENTE;
+import static gestionvehiculos.GestionVehiculosInterface.COCHE_MARCA;
+import static gestionvehiculos.GestionVehiculosInterface.COCHE_MATRICULA;
+import static gestionvehiculos.GestionVehiculosInterface.COCHE_MODELO;
+import static gestionvehiculos.GestionVehiculosInterface.COCHE_NUMERO_BASTIDOR;
+import static gestionvehiculos.GestionVehiculosInterface.DESCENDENTE;
+import static gestionvehiculos.GestionVehiculosInterface.PARTE_COCHE;
+import static gestionvehiculos.GestionVehiculosInterface.PARTE_CODIGO;
+import static gestionvehiculos.GestionVehiculosInterface.PARTE_FECHA;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
-
-
 /**
  *
- * @author Diego Fernández Díaz
+ * @author DAM208
  */
-public class GestionVehiculosOracle implements GestionVehiculosInterface {
+public class GestionVehiculosSQLite implements GestionVehiculosInterface{
+
+    public static GestionVehiculosSQLite instance = new GestionVehiculosSQLite();
     
-    public static GestionVehiculosOracle instance = new GestionVehiculosOracle();
-        
     private Connection conexion;
     
-    /**
-     * Constructor vacío
-     */
-    private GestionVehiculosOracle() {
+    private GestionVehiculosSQLite(){
         
     }
     /**
@@ -37,7 +46,7 @@ public class GestionVehiculosOracle implements GestionVehiculosInterface {
      */
     private void abrirConexion() throws ExcepcionGestionVehiculos {
         try {
-            Class.forName("oracle.jdbc.driver.OracleDriver");
+            Class.forName("org.sqlite.JDBC");
             conexion = DriverManager.getConnection("jdbc:oracle:thin:@127.0.0.1:1521/xe", "aseguradora", "kk");
         } catch (SQLException ex) {
             ExcepcionGestionVehiculos e = new ExcepcionGestionVehiculos(
@@ -161,8 +170,10 @@ public class GestionVehiculosOracle implements GestionVehiculosInterface {
         int registrosAfectados = 0;
         try {
             abrirConexion();
+            sentenciaPreparada = conexion.prepareStatement("pragma foreign_keys = on");
+            sentenciaPreparada.executeUpdate();
             dml = "delete from coche where coche_ID=?";
-            sentenciaPreparada = conexion.prepareStatement(dml);
+            sentenciaPreparada.execute(dml);
             sentenciaPreparada.setInt(1, cocheId);
             registrosAfectados = sentenciaPreparada.executeUpdate();
             sentenciaPreparada.close();
@@ -681,4 +692,5 @@ public class GestionVehiculosOracle implements GestionVehiculosInterface {
         gc.setTime(fecha);
         return gc.get(Calendar.YEAR)+ "-"+(gc.get(Calendar.MONTH)+1)+"-"+gc.get(Calendar.DAY_OF_MONTH);
     }
+    
 }
