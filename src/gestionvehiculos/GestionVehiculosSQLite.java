@@ -20,7 +20,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -47,7 +46,7 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
     private void abrirConexion() throws ExcepcionGestionVehiculos {
         try {
             Class.forName("org.sqlite.JDBC");
-            conexion = DriverManager.getConnection("jdbc:oracle:thin:@127.0.0.1:1521/xe", "aseguradora", "kk");
+            conexion = DriverManager.getConnection("jdbc:sqlite:bd/aseguradora.db");
         } catch (SQLException ex) {
             ExcepcionGestionVehiculos e = new ExcepcionGestionVehiculos(
                     ex.getErrorCode(),
@@ -76,18 +75,12 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
            conexion.close();
         } catch (SQLException | NullPointerException ex) {}
     }
-    /**
-     * Cierra de forma ordenada un objeto Statement y la conexión de la base de 
-     * datos
-     * @author Diego Fernández Díaz
-     * @param conexion Conexion a cerrar
-     */
-    private void cerrarConexion(Connection conexion, CallableStatement sentenciaLlamable) {
-        try {
-           sentenciaLlamable.close();
-           conexion.close();
-        } catch (SQLException | NullPointerException ex) {}
-       
+    private int obtenerTipoError(String error){
+        if(error.contains("NOT NULL")) return 1400;
+        if(error.contains("not unique")) return 1;
+        if(error.contains("constraint failed")) return 2290;
+        if(error.contains("FOREIGN KEY constraint")) return 2292;
+        else return 0;
     }
     /**
      * Inserta un coche en la base de datos.
@@ -103,7 +96,7 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
         int registrosAfectados = 0;
         try {
             abrirConexion();
-            dml = "insert into coche(COCHE_ID,MATRICULA,MARCA,MODELO,EXTRAS,CILINDRADA,ANO,NUMERO_BASTIDOR,PRECIO_MERCADO) values(COCHE_SEQ.NEXTVAL,?,?,?,?,?,?,?,?)";
+            dml = "insert into coche(MATRICULA,MARCA,MODELO,EXTRAS,CILINDRADA,ANO,NUMERO_BASTIDOR,PRECIO_MERCADO) values(?,?,?,?,?,?,?,?)";
             sentenciaPreparada = conexion.prepareStatement(dml);
             sentenciaPreparada.setString(1, coche.getMatricula());
             sentenciaPreparada.setString(2, coche.getMarca());
@@ -123,7 +116,7 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
                     ex.getMessage(), 
                     null, 
                     dml);
-            switch (ex.getErrorCode()) {
+            switch (obtenerTipoError(ex.getMessage())) {
                 case 1400:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("La matricula,marca,modelo,cilindrada,año,numero de bastidor,precio de mercado no pueden estar vacios");
                     break;
@@ -185,7 +178,7 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
                     ex.getMessage(), 
                     null,
                     dml);
-            switch (ex.getErrorCode()) {
+            switch (obtenerTipoError(ex.getMessage())) {
                 case 2292:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("No se puede eliminar este coche porque tiene partes asociados");
                     break;
@@ -418,23 +411,25 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
     */
     @Override
     public int insertarParte(Parte parte) throws ExcepcionGestionVehiculos {
-        CallableStatement sentenciaLlamable = null;
-        String llamada = null;
+        PreparedStatement sentenciaPreparada = null;
+        String dml = null;
         int registrosAfectados = 0;
         try {
             abrirConexion();
-            llamada = "call INSERTAR_PARTE(?,?,?)";
-            sentenciaLlamable = conexion.prepareCall(llamada);
-            sentenciaLlamable.setString(1, parte.getCodigo());
+            sentenciaPreparada = conexion.prepareStatement("pragma foreign_keys = on");
+            sentenciaPreparada.executeUpdate();
+            dml = "insert into Parte(CODIGO,FECHA,COHCE_ID)values(?,?,?)";
+            sentenciaPreparada.execute(dml);
+            sentenciaPreparada.setString(1, parte.getCodigo());
             if (parte.getFecha()== null) {
-                sentenciaLlamable.setNull(2, Types.DATE);
+                sentenciaPreparada.setNull(2, Types.DATE);
             } else {
                 java.sql.Date fecha = new java.sql.Date(parte.getFecha().getTime());
-                sentenciaLlamable.setObject(2, fecha, Types.DATE);
+                sentenciaPreparada.setObject(2, fecha, Types.DATE);
             }
-            sentenciaLlamable.setInt(3, parte.getCocheId().getCocheId());
-            registrosAfectados = sentenciaLlamable.executeUpdate();
-            sentenciaLlamable.close();
+            sentenciaPreparada.setInt(3, parte.getCocheId().getCocheId());
+            registrosAfectados = sentenciaPreparada.executeUpdate();
+            sentenciaPreparada.close();
             conexion.close();
             return registrosAfectados;
         } catch (SQLException ex) {
@@ -442,12 +437,12 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
                     ex.getErrorCode(), 
                     ex.getMessage(), 
                     null, 
-                    llamada);
+                    dml);
             switch (ex.getErrorCode()) {
-                case 2291:
+                case 2292:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("El coche no existe");
                     break;
-                case 1407:
+                case 1400:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("El codigo,la fecha y/o el coche no pueden ser nulos");
                     break;
                 case 1:
@@ -460,7 +455,7 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
                     excepcionGestionVehiculos.setMensajeErrorUsuario("Error en el sistema. Consulta con el administrador");
                     break;
             }
-            cerrarConexion(conexion, sentenciaLlamable);
+            cerrarConexion(conexion, sentenciaPreparada);
             throw excepcionGestionVehiculos;
         }
     }
@@ -474,23 +469,23 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
      */
     @Override
     public int modificarParte(int parteId, Parte parte) throws ExcepcionGestionVehiculos {
-        CallableStatement sentenciaLlamable = null;
-        String llamada = null;
+        PreparedStatement sentenciaPreparada = null;
+        String dml = null;
         int registrosAfectados = 0;
         try {
             abrirConexion();
-            llamada = "call MODIFICAR_PARTE(?,?,?)";
-            sentenciaLlamable = conexion.prepareCall(llamada);
-            sentenciaLlamable.setInt(1, parteId);
-            sentenciaLlamable.setString(2, parte.getCodigo());
+            dml = "update PARTE set CODIGO=?,FECHA=? where PARTE_ID=?";
+            sentenciaPreparada = conexion.prepareCall(dml);
+            sentenciaPreparada.setInt(1, parteId);
+            sentenciaPreparada.setString(2, parte.getCodigo());
             if (parte.getFecha()== null) {
-                sentenciaLlamable.setNull(3, Types.DATE);
+                sentenciaPreparada.setNull(3, Types.DATE);
             } else {
                 java.sql.Date fecha = new java.sql.Date(parte.getFecha().getTime());
-                sentenciaLlamable.setObject(3, fecha, Types.DATE);
+                sentenciaPreparada.setObject(3, fecha, Types.DATE);
             }
-            registrosAfectados = sentenciaLlamable.executeUpdate();
-            sentenciaLlamable.close();
+            registrosAfectados = sentenciaPreparada.executeUpdate();
+            sentenciaPreparada.close();
             conexion.close();
             return registrosAfectados;
         } catch (SQLException ex) {
@@ -498,10 +493,10 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
                     ex.getErrorCode(),
                     ex.getMessage(),
                     null, 
-                    llamada);
+                    dml);
             switch (ex.getErrorCode()) {
-                case 1407:
-                    excepcionGestionVehiculos.setMensajeErrorUsuario("El codigo y/o la fecha   no pueden ser nulos");
+                case 1400:
+                    excepcionGestionVehiculos.setMensajeErrorUsuario("El codigo y/o la fecha no pueden ser nulos");
                     break;
                 case 1:
                     excepcionGestionVehiculos.setMensajeErrorUsuario("El codigo no puede repetirse");
@@ -513,7 +508,7 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
                     excepcionGestionVehiculos.setMensajeErrorUsuario("Error en el sistema. Consulta con el administrador");
                     break;
             }
-            cerrarConexion(conexion, sentenciaLlamable);
+            cerrarConexion(conexion, sentenciaPreparada);
             throw excepcionGestionVehiculos;
         }
     }
@@ -526,16 +521,16 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
      */
     @Override
     public int eliminarParte(int parteId) throws ExcepcionGestionVehiculos {
-        CallableStatement sentenciaLlamable = null;
-        String llamada = null;
+        PreparedStatement sentenciaPreparada = null;
+        String dml = null;
         int registrosAfectados = 0;
         try {
             abrirConexion();
-            llamada = "call ELIMINAR_PARTE(?)";
-            sentenciaLlamable = conexion.prepareCall(llamada);
-            sentenciaLlamable.setInt(1, parteId);
-            registrosAfectados = sentenciaLlamable.executeUpdate();
-            sentenciaLlamable.close();
+            dml = "delete from parte where PARTE_ID=?";
+            sentenciaPreparada =conexion.prepareStatement(dml);
+            sentenciaPreparada.setInt(1, parteId);
+            registrosAfectados = sentenciaPreparada.executeUpdate();
+            sentenciaPreparada.close();
             conexion.close();
             return registrosAfectados;
         }catch (SQLException ex) {
@@ -543,8 +538,8 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
                     ex.getErrorCode(), 
                     ex.getMessage(), 
                     "Error general del sistema. Consulte con el administrador.", 
-                    llamada);
-            cerrarConexion(conexion, sentenciaLlamable);
+                    dml);
+            cerrarConexion(conexion, sentenciaPreparada);
             throw excepcionGestionVehiculos;
         }
     }
