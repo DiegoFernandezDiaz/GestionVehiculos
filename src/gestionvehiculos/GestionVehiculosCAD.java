@@ -12,7 +12,7 @@ import java.util.Date;
  *
  * @author DAM208
  */
-public interface GestionVehiculosInterface {
+public interface GestionVehiculosCAD {
         
     public static Integer ASCENDENTE = 1;
     public static Integer DESCENDENTE = 2;

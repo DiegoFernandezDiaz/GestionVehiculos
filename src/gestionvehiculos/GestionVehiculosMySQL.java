@@ -12,7 +12,7 @@ import java.util.Date;
  *
  * @author DAM208
  */
-public class GestionVehiculosMySQL implements GestionVehiculosInterface {
+public class GestionVehiculosMySQL implements GestionVehiculosCAD {
 
     public static GestionVehiculosMySQL instance = new GestionVehiculosMySQL();
     

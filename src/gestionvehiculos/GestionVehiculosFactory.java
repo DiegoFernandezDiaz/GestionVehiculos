@@ -10,7 +10,7 @@ package gestionvehiculos;
  * @author DAM208
  */
 public class GestionVehiculosFactory {
-    public static GestionVehiculosInterface getInstance(String fuenteDatos){
+    public static GestionVehiculosCAD getInstance(String fuenteDatos){
         if(fuenteDatos.equals("Oracle")) return GestionVehiculosOracle.instance;
         if(fuenteDatos.equals("MySQL")) return GestionVehiculosMySQL.instance;
         if(fuenteDatos.equals("SQLite")) return GestionVehiculosSQLite.instance;

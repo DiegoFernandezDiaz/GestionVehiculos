@@ -19,7 +19,7 @@ import java.util.GregorianCalendar;
  *
  * @author Diego Fernández Díaz
  */
-public class GestionVehiculosOracle implements GestionVehiculosInterface {
+public class GestionVehiculosOracle implements GestionVehiculosCAD {
     
     public static GestionVehiculosOracle instance = new GestionVehiculosOracle();
         

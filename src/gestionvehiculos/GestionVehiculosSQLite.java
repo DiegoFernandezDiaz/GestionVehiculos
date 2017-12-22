@@ -5,15 +5,15 @@
  */
 package gestionvehiculos;
 
-import static gestionvehiculos.GestionVehiculosInterface.ASCENDENTE;
-import static gestionvehiculos.GestionVehiculosInterface.COCHE_MARCA;
-import static gestionvehiculos.GestionVehiculosInterface.COCHE_MATRICULA;
-import static gestionvehiculos.GestionVehiculosInterface.COCHE_MODELO;
-import static gestionvehiculos.GestionVehiculosInterface.COCHE_NUMERO_BASTIDOR;
-import static gestionvehiculos.GestionVehiculosInterface.DESCENDENTE;
-import static gestionvehiculos.GestionVehiculosInterface.PARTE_COCHE;
-import static gestionvehiculos.GestionVehiculosInterface.PARTE_CODIGO;
-import static gestionvehiculos.GestionVehiculosInterface.PARTE_FECHA;
+import static gestionvehiculos.GestionVehiculosCAD.ASCENDENTE;
+import static gestionvehiculos.GestionVehiculosCAD.COCHE_MARCA;
+import static gestionvehiculos.GestionVehiculosCAD.COCHE_MATRICULA;
+import static gestionvehiculos.GestionVehiculosCAD.COCHE_MODELO;
+import static gestionvehiculos.GestionVehiculosCAD.COCHE_NUMERO_BASTIDOR;
+import static gestionvehiculos.GestionVehiculosCAD.DESCENDENTE;
+import static gestionvehiculos.GestionVehiculosCAD.PARTE_COCHE;
+import static gestionvehiculos.GestionVehiculosCAD.PARTE_CODIGO;
+import static gestionvehiculos.GestionVehiculosCAD.PARTE_FECHA;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -30,7 +30,7 @@ import java.util.GregorianCalendar;
  *
  * @author DAM208
  */
-public class GestionVehiculosSQLite implements GestionVehiculosInterface{
+public class GestionVehiculosSQLite implements GestionVehiculosCAD{
 
     public static GestionVehiculosSQLite instance = new GestionVehiculosSQLite();
     
@@ -166,7 +166,7 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
             sentenciaPreparada = conexion.prepareStatement("pragma foreign_keys = on");
             sentenciaPreparada.executeUpdate();
             dml = "delete from coche where coche_ID=?";
-            sentenciaPreparada.execute(dml);
+            sentenciaPreparada = conexion.prepareStatement(dml);
             sentenciaPreparada.setInt(1, cocheId);
             registrosAfectados = sentenciaPreparada.executeUpdate();
             sentenciaPreparada.close();
@@ -274,11 +274,11 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
         Coche coche=null;
         try {
             abrirConexion();
-            dql = "SELECT * FROM coche WHERE coche_id=?";
+            dql = "SELECT coche_id,matricula,marca,modelo,extras,cilindrada,ano,numero_bastidor,precio_mercado FROM coche WHERE coche_id=?";
             sentenciaPreparada = conexion.prepareStatement(dql);
             sentenciaPreparada.setInt(1, cocheId);
-            sentenciaPreparada.executeQuery();
-            ResultSet resultado = sentenciaPreparada.executeQuery(dql);
+            ResultSet resultado;
+            resultado = sentenciaPreparada.executeQuery();
             while (resultado.next()) {
                 coche=new Coche();
                 coche.setCocheId(resultado.getInt("coche_id"));
@@ -313,7 +313,7 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
      */
     @Override
     public ArrayList<Coche> leerCoches() throws ExcepcionGestionVehiculos {
-        String dql = "SELECT * FROM coche";
+        String dql = "SELECT coche_id,matricula,marca,modelo,extras,cilindrada,ano,numero_bastidor,precio_mercado FROM coche";
         return leerCoches(dql);
     }
     /**
@@ -331,8 +331,7 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
         try {
             abrirConexion();
             sentenciaPreparada = conexion.prepareStatement(dql);
-            sentenciaPreparada.executeQuery();            
-            ResultSet resultado = sentenciaPreparada.executeQuery(dql);
+            ResultSet resultado = sentenciaPreparada.executeQuery();
             while (resultado.next()) {
                 coche = new Coche();
                 coche.setCocheId(resultado.getInt("coche_id"));
@@ -419,7 +418,7 @@ public class GestionVehiculosSQLite implements GestionVehiculosInterface{
             sentenciaPreparada = conexion.prepareStatement("pragma foreign_keys = on");
             sentenciaPreparada.executeUpdate();
             dml = "insert into Parte(CODIGO,FECHA,COHCE_ID)values(?,?,?)";
-            sentenciaPreparada.execute(dml);
+            sentenciaPreparada = conexion.prepareStatement(dml);
             sentenciaPreparada.setString(1, parte.getCodigo());
             if (parte.getFecha()== null) {
                 sentenciaPreparada.setNull(2, Types.DATE);
